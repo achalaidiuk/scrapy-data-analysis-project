@@ -6,7 +6,6 @@ from autoria.utils import (
     extract_engine_info,
     extract_horsepower,
     extract_color,
-    clean_color,
     extract_fuel_type,
     extract_gearbox
 )
@@ -22,7 +21,7 @@ class AutoriaSpider(scrapy.Spider):
     euro_to_usd = 1 / 44.80
     uah_to_usd = 1 / 42.00
 
-    def __init__(self, last_page=201, *args, **kwargs):
+    def __init__(self, last_page=1, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.last_page = int(last_page)
 
