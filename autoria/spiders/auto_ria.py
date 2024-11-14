@@ -1,8 +1,15 @@
-import re
 import scrapy
 
 from autoria.colors import color_palette
 from autoria.items import AutoriaItem
+from autoria.utils import (
+    extract_engine_info,
+    extract_horsepower,
+    extract_color,
+    clean_color,
+    extract_fuel_type,
+    extract_gearbox
+)
 
 
 class AutoriaSpider(scrapy.Spider):
@@ -66,12 +73,12 @@ class AutoriaSpider(scrapy.Spider):
         engine_text = response.css(
             "#details > dl > dd:nth-child(3) > span.argument::text"
         ).get()
-        item["engine"] = self.extract_engine_info(engine_text)
+        item["engine"] = extract_engine_info(engine_text)
 
         horsepower = response.css(
             "#details > dl > dd:nth-child(3) > span.argument::text"
         ).get()
-        item["horsepower"] = self.extract_horsepower(horsepower)
+        item["horsepower"] = extract_horsepower(horsepower)
 
         color_texts = [
             response.css(
@@ -79,12 +86,12 @@ class AutoriaSpider(scrapy.Spider):
             ).get()
             for i in [6, 7, 8, 9]
         ]
-        item["color"] = self.extract_color(color_texts)
+        item["color"] = extract_color(color_texts)
 
         fuel_type_text = response.css(
             "#details dl dd:nth-child(3) span.argument"
         ).get()
-        item['fuel_type'] = self.extract_fuel_type(fuel_type_text)
+        item['fuel_type'] = extract_fuel_type(fuel_type_text)
 
         gearbox_texts = [
             response.css(
@@ -92,62 +99,7 @@ class AutoriaSpider(scrapy.Spider):
             ).get()
             for i in [4, 5, 6, 7]
         ]
-        item["gearbox"] = self.extract_gearbox(gearbox_texts, fuel_type_text)
+        item["gearbox"] = extract_gearbox(gearbox_texts, fuel_type_text)
 
         self.log(f"Car data: {item}")
         return item
-
-    def extract_engine_info(self, engine_text):
-        if engine_text:
-            if (
-                    "електро" in engine_text.lower()
-                    or "electric" in engine_text.lower()
-            ):
-                return "Electric"
-            engine_volume = re.search(r"([0-9.]+)\s*л", engine_text)
-            if engine_volume:
-                return engine_volume.group(1)
-        return "Не вказано"
-
-    def extract_horsepower(self, horsepower_text):
-        if horsepower_text:
-            in_brackets = re.search(r"\((.*?)\)", horsepower_text)
-            if in_brackets:
-                horsepower = in_brackets.group(1)
-                horsepower_value = re.search(r"(\d+)\s*к\.с\.", horsepower)
-                return horsepower_value.group(1) if horsepower_value else None
-        return "Не вказано"
-
-    def extract_color(self, color_texts):
-        colors = [self.clean_color(text) for text in color_texts if text]
-        valid_colors = [color for color in colors if color]
-        return ", ".join(valid_colors) if valid_colors else "Не вказано"
-
-    def clean_color(self, value):
-        value = re.sub(r"[^a-zа-яіїєґ0-9\s]", "", value.strip().lower())
-        return next(
-            (color.capitalize()
-             for color in self.color_palette if color in value), None
-        )
-
-    def extract_fuel_type(self, fuel_text):
-        if fuel_text:
-            fuel_text = fuel_text.strip().lower()
-            for fuel in ["електро", "дизель", "газ", "гібрид", "бензин"]:
-                if fuel in fuel_text:
-                    return fuel.capitalize()
-        return "Не вказано"
-
-    def extract_gearbox(self, gearbox_texts, fuel_type_text):
-        gearboxes = []
-        if fuel_type_text and "електро" in fuel_type_text.lower():
-            gearboxes.append("Автомат")
-        else:
-            for text in gearbox_texts:
-                if text:
-                    text = text.strip().lower()
-                    if "автомат" in text:
-                        gearboxes.append("Автомат")
-                    elif "механіка" in text or "ручна" in text:
-                        gearboxes.append("Механіка")
-        return ", ".join(set(gearboxes)) if gearboxes else "Автомат"
