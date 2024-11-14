@@ -1,5 +1,4 @@
 import scrapy
-
 from autoria.colors import color_palette
 from autoria.items import AutoriaItem
 from autoria.utils import (
@@ -7,7 +6,7 @@ from autoria.utils import (
     extract_horsepower,
     extract_color,
     extract_fuel_type,
-    extract_gearbox
+    extract_gearbox,
 )
 
 
@@ -30,8 +29,11 @@ class AutoriaSpider(scrapy.Spider):
         headers = {"User-Agent": "Mozilla/5.0"}
 
         for i in range(1, self.last_page + 1):
-            yield scrapy.Request(url=base_url + str(i), headers=headers,
-                                 callback=self.parse)
+            yield scrapy.Request(
+                url=base_url + str(i),
+                headers=headers,
+                callback=self.parse,
+            )
 
     def parse(self, response):
         for href in response.css(
@@ -63,11 +65,11 @@ class AutoriaSpider(scrapy.Spider):
         mileage_text = response.css(
             "#details > dl > dd:nth-child(2) > span.argument::text"
         ).get()
-        item["mileage"] = int(
-            "".join(
-                filter(str.isdigit, mileage_text)
-            )
-        ) * 1000 if mileage_text else "Не вказано"
+        item["mileage"] = (
+            int("".join(filter(str.isdigit, mileage_text))) * 1000
+            if mileage_text
+            else "Не вказано"
+        )
 
         engine_text = response.css(
             "#details > dl > dd:nth-child(3) > span.argument::text"
@@ -90,7 +92,7 @@ class AutoriaSpider(scrapy.Spider):
         fuel_type_text = response.css(
             "#details dl dd:nth-child(3) span.argument"
         ).get()
-        item['fuel_type'] = extract_fuel_type(fuel_type_text)
+        item["fuel_type"] = extract_fuel_type(fuel_type_text)
 
         gearbox_texts = [
             response.css(

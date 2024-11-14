@@ -4,7 +4,8 @@ from autoria.colors import color_palette
 
 def extract_engine_info(engine_text):
     if engine_text:
-        if "електро" in engine_text.lower() or "electric" in engine_text.lower():
+        engine_text_lower = engine_text.lower()
+        if "електро" in engine_text_lower or "electric" in engine_text_lower:
             return "Electric"
         engine_volume = re.search(r"([0-9.]+)\s*л", engine_text)
         if engine_volume:
@@ -27,7 +28,9 @@ def extract_color(color_texts):
 
 def clean_color(value):
     value = re.sub(r"[^a-zа-яіїєґ0-9\s]", "", value.strip().lower())
-    return next((color.capitalize() for color in color_palette if color in value), None)
+    return next(
+        (color.capitalize() for color in color_palette if color in value), None
+    )
 
 def extract_fuel_type(fuel_text):
     if fuel_text:
